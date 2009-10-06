@@ -9,7 +9,7 @@ module ActiveMerchant #:nodoc:
       # Datatrans status success code
       DATATRANS_STATUS_SUCCESS = 'trxStatus = response'
       # Datatrans status error code
-      DATATRANS_ERROR_SUCCESS = 'trxStatus = error'
+      DATATRANS_STATUS_ERROR = 'trxStatus = error'
       
       # The countries the gateway supports merchants from as 2 digit ISO country codes
       self.supported_countries = ['CH']
@@ -33,23 +33,23 @@ module ActiveMerchant #:nodoc:
       end
       
       def authorize(money, creditcard, options = {})
-        post = {}
-        add_invoice(post, options)
-        add_creditcard(post, creditcard)        
-        add_address(post, creditcard, options)        
-        add_customer_data(post, options)
-        
-        commit('authonly', money, post)
+#        post = {}
+#        add_invoice(post, options)
+#        add_creditcard(post, creditcard)
+#        add_address(post, creditcard, options)
+#        add_customer_data(post, options)
+#
+#        commit('authonly', money, post)
       end
       
       def purchase(money, creditcard, options = {})
-        post = {}
-        add_invoice(post, options)
-        add_creditcard(post, creditcard)        
-        add_address(post, creditcard, options)   
-        add_customer_data(post, options)
-             
-        commit('sale', money, post)
+#        post = {}
+#        add_invoice(post, options)
+#        add_creditcard(post, creditcard)
+#        add_address(post, creditcard, options)
+#        add_customer_data(post, options)
+#
+#        commit('sale', money, post)
       end                       
     
       def capture(money, authorization, options = {})
@@ -78,22 +78,26 @@ module ActiveMerchant #:nodoc:
         h = Net::HTTP.new(url.host, url.port)
         h.use_ssl = false
         resp = h.post(url.path, doc, headers)
-        commit(resp)
+        response = parse(resp.body)
+        commit(response)
       end
 
       private
+
+      def parse(data)
+        response = {}
+        source = XML::Document.string(data)
+        response[:status] = source.find('//@trxStatus').to_a
+        response
+      end
       
       def commit(response)
-        source = XML::Document.string(response.body)
-        status = source.find('//@trxStatus')
-        if status.to_a?equal(DATATRANS_STATUS_SUCCESS)
-          Response.new(success, message, params, options)
-        end
-#        Response.new(response[:status] == DATACASH_SUCCESS, response[:reason], response,
-#          :test => test?,
-#          :authorization => "#{response[:datacash_reference]};#{response[:authcode]};#{response[:ca_reference]}"
-#        )
-#        Response.new(true, 'OK', test[:reason => 'test'], :test => test?)
+#        puts response[:status]
+#        puts DATATRANS_STATUS_SUCCESS
+#        puts DATATRANS_STATUS_ERROR.eql?(response[:status].to_s)
+        Response.new(response[:status].to_s.eql?(DATATRANS_STATUS_SUCCESS), response[:reason], response,
+          :test => test?
+        )
       end
 
       def payment_method(creditcard)
@@ -109,30 +113,7 @@ module ActiveMerchant #:nodoc:
           return 'ERROR'
         end
       end
-
-#      def add_customer_data(post, options)
-#      end
-#
-#      def add_address(post, creditcard, options)
-#      end
-#
-#      def add_invoice(post, options)
-#      end
-#
-#      def add_creditcard(post, creditcard)
-#      end
-#
-#      def parse(body)
-#      end
-#
-#      def commit(action, money, parameters)
-#      end
-#
-#      def message_from(response)
-#      end
-#
-#      def post_data(action, parameters = {})
-#      end
+      
     end
   end
 end
