@@ -4,7 +4,8 @@ class DatatransTest < Test::Unit::TestCase
   def setup
     @gateway = DatatransGateway.new(
                  :login => 'login',
-                 :password => 'password'
+                 :password => 'password',
+                 :merchant_id => '1000011907'
                )
 
     @visa_credit_card = CreditCard.new(
@@ -38,7 +39,6 @@ class DatatransTest < Test::Unit::TestCase
       :order_id => generate_unique_id,
       :billing_address => address,
       :description => 'Store Purchase',
-      :merchant_id => '1000011907',
       :refno => '23232301'
     }
   end

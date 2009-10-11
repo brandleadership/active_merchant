@@ -1,4 +1,31 @@
-require 'xml'
+#  Usage for a PreAuth (authorize) is as follows:
+#
+#  twenty = 2000
+#  gateway = DatatransGateway.new(
+#    :login => 'merchant_id',
+#    :password => 'psigate1234'
+#  )
+#
+#  creditcard = CreditCard.new(
+#    :number => '4242424242424242',
+#    :month => 8,
+#    :year => 2006,
+#    :first_name => 'Longbob',
+#    :last_name => 'Longsen'
+#  )
+#  response = @gateway.authorize(twenty, creditcard,
+#     :order_id =>  1234,
+#     :billing_address => {
+#  	    :address1 => '123 fairweather Lane',
+#  	    :address2 => 'Apt B',
+#  	    :city => 'New York',
+#  	    :state => 'NY',
+#  	    :country => 'U.S.A.',
+#  	    :zip => '10010'
+#    },
+#    :email => 'jack@yahoo.com'
+#  )
+require 'rexml/document'
 
 module ActiveMerchant #:nodoc:
   module Billing #:nodoc:
@@ -7,9 +34,10 @@ module ActiveMerchant #:nodoc:
       LIVE_URL = 'http://payment.datatrans.biz/upp/jsp/XML_processor.jsp'
 
       # Datatrans status success code
-      DATATRANS_STATUS_SUCCESS = 'trxStatus = response'
+      DATATRANS_STATUS_SUCCESS = 'response'
+      
       # Datatrans status error code
-      DATATRANS_STATUS_ERROR = 'trxStatus = error'
+      DATATRANS_STATUS_ERROR = 'error'
       
       # The countries the gateway supports merchants from as 2 digit ISO country codes
       self.supported_countries = ['CH']
@@ -26,8 +54,9 @@ module ActiveMerchant #:nodoc:
       # The name of the gateway
       self.display_name = 'DataTrans'
       
+      # :login, :password and :merchant_id are required
       def initialize(options = {})
-        requires!(options, :login, :password)
+        requires!(options, :login, :password, :merchant_id)
         @options = options
         super
       end
@@ -54,29 +83,23 @@ module ActiveMerchant #:nodoc:
     
       def capture(money, authorization, options = {})
         doc = ""
-        xml = Builder::XmlMarkup.new(:target => doc, :indent => 2)
-        xml.instruct!
-        xml.paymentService(:version => '1'){
-          xml.body(:merchantId => options[:merchant_id], :testOnly => test? ? 'yes' : 'no' ){
-            xml.transaction(:refno => options[:refno]){
-              xml.request{
-                xml.amount(
-                  money
-                )
-                xml.currency(
-                  self.default_currency || options[:currency]
-                )
-                xml.authorizationCode(
-                  authorization
-                )
-              }
-            }
-          }
-        }
+        xml = REXML::Document.new
+        xml << REXML::XMLDecl.new
+        root = xml.add_element "paymentService", {"version" => "1"}
+        body = root.add_element "body", {"merchantId" => @options[:merchant_id], "testOnly" => test? ? 'yes' : 'no' ""}
+        transaction = body.add_element "transaction", {"refno" => options[:refno]}
+        request = transaction.add_element "request"
+        amount = request.add_element "amount"
+        amount.text = money.to_s
+        currency = request.add_element "currency"
+        currency.text = self.default_currency.to_s || options[:currency].to_s
+        authorization_code = request.add_element "authorizationCode"
+        authorization_code.text = authorization.to_s
         url = URI.parse(test? ? TEST_URL : LIVE_URL)
         headers = {"Content-Type" => "text/xml"}
         h = Net::HTTP.new(url.host, url.port)
         h.use_ssl = false
+        xml.write(doc, 2)
         resp = h.post(url.path, doc, headers)
         response = parse(resp.body)
         commit(response)
@@ -86,15 +109,25 @@ module ActiveMerchant #:nodoc:
 
       def parse(data)
         response = {}
-        source = XML::Document.string(data)
-        response[:status] = source.find('//@trxStatus').to_a
+        source = REXML::Document.new(data)
+        root = source.root
+        body = root.get_elements("body").first
+        error_code = "" || body.get_elements("errorCode").first.get_text
+        error_message = "" || body.get_elements("errorMessage").first.get_text
+        error_detail = "" || body.get_elements("errorDetail").first.get_text
+        puts body
+        ref_no = "" || body.get_elements("transaction").first.attributes["refno"]
+        response = {:status => body.attributes["status"].to_s,
+                    :error_code => error_code,
+                    :reason => error_message,
+                    :error_detail => error_detail,
+                    :ref_no => ref_no
+                   }
         response
       end
       
       def commit(response)
-#        puts response[:status]
-#        puts DATATRANS_STATUS_SUCCESS
-#        puts DATATRANS_STATUS_ERROR.eql?(response[:status].to_s)
+        puts response[:status]
         Response.new(response[:status].to_s.eql?(DATATRANS_STATUS_SUCCESS), response[:reason], response,
           :test => test?
         )

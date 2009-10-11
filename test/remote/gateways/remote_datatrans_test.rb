@@ -6,7 +6,8 @@ class RemoteDatatransTest < Test::Unit::TestCase
   def setup
     @gateway = DatatransGateway.new(
                  :login => 'login',
-                 :password => 'password'
+                 :password => 'password',
+                 :merchant_id => '1000011907'
                )
     
     @amount = 100
@@ -17,7 +18,6 @@ class RemoteDatatransTest < Test::Unit::TestCase
       :order_id => '1',
       :billing_address => address,
       :description => 'Store Purchase',
-      :merchant_id => '1000011907',
       :refno => '23232301'
     }
   end
