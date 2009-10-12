@@ -1,30 +1,5 @@
-#  Usage for a PreAuth (authorize) is as follows:
-#
-#  twenty = 2000
-#  gateway = DatatransGateway.new(
-#    :login => 'merchant_id',
-#    :password => 'psigate1234'
-#  )
-#
-#  creditcard = CreditCard.new(
-#    :number => '4242424242424242',
-#    :month => 8,
-#    :year => 2006,
-#    :first_name => 'Longbob',
-#    :last_name => 'Longsen'
-#  )
-#  response = @gateway.authorize(twenty, creditcard,
-#     :order_id =>  1234,
-#     :billing_address => {
-#  	    :address1 => '123 fairweather Lane',
-#  	    :address2 => 'Apt B',
-#  	    :city => 'New York',
-#  	    :state => 'NY',
-#  	    :country => 'U.S.A.',
-#  	    :zip => '10010'
-#    },
-#    :email => 'jack@yahoo.com'
-#  )
+# Author::    Roman Simecek (mailto:roman.simecek@screenconcept.ch)
+# License::   Distributes under the same terms as Ruby
 require 'rexml/document'
 
 module ActiveMerchant #:nodoc:
@@ -54,7 +29,41 @@ module ActiveMerchant #:nodoc:
       # The name of the gateway
       self.display_name = 'DataTrans'
       
-      # :login, :password and :merchant_id are required
+      # = Datatrans Gatway
+      #
+      # Initialize the Datatrans Gateway
+      # The parameters you will receive from Datatrans
+      #
+      #
+      # == Usage
+      #
+      # === Initialize
+      #
+      # ==== Parameters
+      # * <tt>:login</tt> - Your login for Datatrans
+      # * <tt>:password</tt> - Your password for Datatrans
+      # * <tt>:merchant_id</tt> - Your merchant id for Datatrans
+      # ==== Example
+      #  gateway = DatatransGateway.new(
+      #           :login => 'login',
+      #           :password => 'password',
+      #           :merchant_id => '1000011907'
+      #         )
+      #
+      # === Capture
+      #
+      # ==== Parameters
+      # * <tt>:amount</tt> - The amount to be captured.  Either an Integer value in cents.
+      # * <tt>:authorization</tt> - The authorization code received from the authorization.
+      # * <tt>:options</tt>
+      #   * <tt>:refno</tt> - The Reference Number of the transaction.
+      # ==== Example
+      #   response = @gateway.capture(:amount,
+      #                              :authorization,
+      #                              :options => { :refno => '23232301' }
+      #                             )
+      #
+      #
       def initialize(options = {})
         requires!(options, :login, :password, :merchant_id)
         @options = options
@@ -69,6 +78,7 @@ module ActiveMerchant #:nodoc:
       # * <tt>options</tt>
       #   * <tt>:refno</tt> - The Reference Number of the transaction.
       #   * <tt>:currency</tt> - The Currency of the transaction, default CHF.
+      # 
       def capture(money, authorization, options = {})
         doc = ""
         xml = REXML::Document.new

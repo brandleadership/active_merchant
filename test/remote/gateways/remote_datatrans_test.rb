@@ -16,8 +16,6 @@ class RemoteDatatransTest < Test::Unit::TestCase
     
     @options = { 
       :order_id => '1',
-      :billing_address => address,
-      :description => 'Store Purchase',
       :refno => '23232301'
     }
   end
