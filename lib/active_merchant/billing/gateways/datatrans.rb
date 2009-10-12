@@ -60,27 +60,15 @@ module ActiveMerchant #:nodoc:
         @options = options
         super
       end
-      
-      def authorize(money, creditcard, options = {})
-#        post = {}
-#        add_invoice(post, options)
-#        add_creditcard(post, creditcard)
-#        add_address(post, creditcard, options)
-#        add_customer_data(post, options)
-#
-#        commit('authonly', money, post)
-      end
-      
-      def purchase(money, creditcard, options = {})
-#        post = {}
-#        add_invoice(post, options)
-#        add_creditcard(post, creditcard)
-#        add_address(post, creditcard, options)
-#        add_customer_data(post, options)
-#
-#        commit('sale', money, post)
-      end                       
-    
+                               
+      # Capture authorized transaction from a credit card
+      #
+      # ==== Parameters
+      # * <tt>money</tt> - The amount to be captured.  Either an Integer value in cents.
+      # * <tt>authorization</tt> - The authorization code received from the authorization.
+      # * <tt>options</tt>
+      #   * <tt>:refno</tt> - The Reference Number of the transaction.
+      #   * <tt>:currency</tt> - The Currency of the transaction, default CHF.
       def capture(money, authorization, options = {})
         doc = ""
         xml = REXML::Document.new
@@ -115,7 +103,6 @@ module ActiveMerchant #:nodoc:
         error_code = "" || body.get_elements("errorCode").first.get_text
         error_message = "" || body.get_elements("errorMessage").first.get_text
         error_detail = "" || body.get_elements("errorDetail").first.get_text
-        puts body
         ref_no = "" || body.get_elements("transaction").first.attributes["refno"]
         response = {:status => body.attributes["status"].to_s,
                     :error_code => error_code,
@@ -127,7 +114,6 @@ module ActiveMerchant #:nodoc:
       end
       
       def commit(response)
-        puts response[:status]
         Response.new(response[:status].to_s.eql?(DATATRANS_STATUS_SUCCESS), response[:reason], response,
           :test => test?
         )
