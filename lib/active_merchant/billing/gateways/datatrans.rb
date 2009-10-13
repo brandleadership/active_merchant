@@ -8,11 +8,11 @@ module ActiveMerchant #:nodoc:
       TEST_URL = 'http://pilot.datatrans.biz/upp/jsp/XML_processor.jsp'
       LIVE_URL = 'http://payment.datatrans.biz/upp/jsp/XML_processor.jsp'
 
-      # Datatrans status success code
-      DATATRANS_STATUS_SUCCESS = 'response'
+      # Datatrans status accepted code
+      DATATRANS_TRXSTATUS_SUCCESS = 'response'
       
       # Datatrans status error code
-      DATATRANS_STATUS_ERROR = 'error'
+      DATATRANS_STATUS_SUCCESS = 'accepted'
       
       # The countries the gateway supports merchants from as 2 digit ISO country codes
       self.supported_countries = ['CH']
@@ -77,12 +77,11 @@ module ActiveMerchant #:nodoc:
       # * <tt>authorization</tt> - The authorization code received from the authorization.
       # * <tt>options</tt>
       #   * <tt>:refno</tt> - The Reference Number of the transaction.
-      #   * <tt>:currency</tt> - The Currency of the transaction, default CHF.
+      #   * <tt>:currency</tt> - Optional the Currency of the transaction, default CHF.
       # 
       def capture(money, authorization, options = {})
         doc = ""
-        xml = REXML::Document.new
-        xml << REXML::XMLDecl.new
+        xml = REXML::Document.new('<?xml version="1.0" encoding="UTF-8" ?>')
         root = xml.add_element "paymentService", {"version" => "1"}
         body = root.add_element "body", {"merchantId" => @options[:merchant_id], "testOnly" => test? ? 'yes' : 'no' ""}
         transaction = body.add_element "transaction", {"refno" => options[:refno]}
@@ -97,7 +96,7 @@ module ActiveMerchant #:nodoc:
         headers = {"Content-Type" => "text/xml"}
         h = Net::HTTP.new(url.host, url.port)
         h.use_ssl = false
-        xml.write(doc, 2)
+        xml.write(doc, 0)
         resp = h.post(url.path, doc, headers)
         response = parse(resp.body)
         commit(response)
@@ -106,6 +105,7 @@ module ActiveMerchant #:nodoc:
       private
 
       def parse(data)
+        puts data
         response = {}
         source = REXML::Document.new(data)
         root = source.root
@@ -115,6 +115,7 @@ module ActiveMerchant #:nodoc:
         error_detail = "" || body.get_elements("errorDetail").first.get_text
         ref_no = "" || body.get_elements("transaction").first.attributes["refno"]
         response = {:status => body.attributes["status"].to_s,
+                    :trx_status => body.get_elements("transaction").first.attributes["trxStatus"].to_s,
                     :error_code => error_code,
                     :reason => error_message,
                     :error_detail => error_detail,
@@ -124,7 +125,7 @@ module ActiveMerchant #:nodoc:
       end
       
       def commit(response)
-        Response.new(response[:status].to_s.eql?(DATATRANS_STATUS_SUCCESS), response[:reason], response,
+        Response.new(response[:status].to_s.eql?(DATATRANS_STATUS_SUCCESS) && response[:trx_status].to_s.eql?(DATATRANS_TRXSTATUS_SUCCESS), response[:reason], response,
           :test => test?
         )
       end
