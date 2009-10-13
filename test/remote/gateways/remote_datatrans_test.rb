@@ -18,7 +18,7 @@ class RemoteDatatransTest < Test::Unit::TestCase
   end
   
   def test_capture
-    assert response = @gateway.capture(@amount, 422636182, @options) # the authorization code has to updated before this testing
+    assert response = @gateway.capture(@amount, 933486941, @options) # the authorization code has to updated before this testing
     assert_equal true, response.success?, 'If failed check if refno is in the datatrans system and unsettled'
   end
 
@@ -28,7 +28,7 @@ class RemoteDatatransTest < Test::Unit::TestCase
   end
 
   def test_void
-    assert response = @gateway.void(645212931, @options)
+    assert response = @gateway.void(2826987, @options)
     assert_equal true, response.success?, 'Check if the transaction existst.'
     assert_equal 'cancellation succeeded', response.message.to_s
   end
