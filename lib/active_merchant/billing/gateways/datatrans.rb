@@ -80,6 +80,7 @@ module ActiveMerchant #:nodoc:
       #   * <tt>:currency</tt> - Optional the Currency of the transaction, default CHF.
       # 
       def capture(money, authorization, options = {})
+        options[:amount] = money.to_s
         create_xml(authorization, options, doc = "", false)
         response = post_xml(doc)
         commit(response)
@@ -126,6 +127,7 @@ module ActiveMerchant #:nodoc:
         reqtype = request.add_element "reqtype" if void
         reqtype.text = "DOA" if void
         xml.write(doc, 0)
+        puts doc
         doc
       end
 
@@ -168,20 +170,6 @@ module ActiveMerchant #:nodoc:
                      response,
                      :test => test?
                     )
-      end
-
-      def payment_method(creditcard)
-        if(creditcard.type == 'visa')
-          return 'VIS'
-        elsif(creditcard.type == 'master_card')
-          return 'ECA'
-        elsif(creditcard.type == 'american_express')
-          return 'AMX'
-        elsif(creditcard.type == 'diners_club')
-          return 'DIN'
-        else
-          return 'ERROR'
-        end
       end
       
     end

@@ -15,15 +15,18 @@ class RemoteDatatransTest < Test::Unit::TestCase
       :refno => '123987',
       :amount => 1000
     }
+    @options_capture = {
+      :refno => '123987'
+    }
   end
   
   def test_capture
-    assert response = @gateway.capture(@amount, 933486941, @options) # the authorization code has to updated before this testing
+    assert response = @gateway.capture(@amount, 933486941, @options_capture) # the authorization code has to updated before this testing
     assert_equal true, response.success?, 'If failed check if refno is in the datatrans system and unsettled'
   end
 
   def test_capture_failed
-    assert response = @gateway.capture(@amount, 608579429, @options)
+    assert response = @gateway.capture(@amount, 608579429, @options_capture)
     assert_false(response.success?, 'Capture failed')
   end
 
