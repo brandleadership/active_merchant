@@ -80,25 +80,8 @@ module ActiveMerchant #:nodoc:
       #   * <tt>:currency</tt> - Optional the Currency of the transaction, default CHF.
       # 
       def capture(money, authorization, options = {})
-        doc = ""
-        xml = REXML::Document.new('<?xml version="1.0" encoding="UTF-8" ?>')
-        root = xml.add_element "paymentService", {"version" => "1"}
-        body = root.add_element "body", {"merchantId" => @options[:merchant_id], "testOnly" => test? ? 'yes' : 'no' ""}
-        transaction = body.add_element "transaction", {"refno" => options[:refno]}
-        request = transaction.add_element "request"
-        amount = request.add_element "amount"
-        amount.text = money.to_s
-        currency = request.add_element "currency"
-        currency.text = self.default_currency.to_s || options[:currency].to_s
-        authorization_code = request.add_element "authorizationCode"
-        authorization_code.text = authorization.to_s
-        url = URI.parse(test? ? TEST_URL : LIVE_URL)
-        headers = {"Content-Type" => "text/xml"}
-        h = Net::HTTP.new(url.host, url.port)
-        h.use_ssl = false
-        xml.write(doc, 0)
-        resp = h.post(url.path, doc, headers)
-        response = parse(resp.body)
+        create_xml(authorization, options, doc = "", false)
+        response = post_xml(doc)
         commit(response)
       end
 
@@ -111,7 +94,24 @@ module ActiveMerchant #:nodoc:
       #   * <tt>:amount</tt> - The amount of the transaction
       #   * <tt>:currency</tt> - Optional the Currency of the transaction, default CHF.
       def void(authorization, options = {})
-        doc = ""
+        create_xml(authorization, options, doc = "", true)
+        response = post_xml(doc)
+        commit(response)
+      end
+
+      private
+
+      def post_xml(doc)
+        url = URI.parse(test? ? TEST_URL : LIVE_URL)
+        headers = {"Content-Type" => "text/xml"}
+        h = Net::HTTP.new(url.host, url.port)
+        h.use_ssl = false
+        resp = h.post(url.path, doc, headers)
+        response = parse(resp.body)
+        response
+      end
+
+      def create_xml(authorization, options, doc, void)
         xml = REXML::Document.new('<?xml version="1.0" encoding="UTF-8" ?>')
         root = xml.add_element "paymentService", {"version" => "1"}
         body = root.add_element "body", {"merchantId" => @options[:merchant_id], "testOnly" => test? ? 'yes' : 'no' ""}
@@ -123,19 +123,11 @@ module ActiveMerchant #:nodoc:
         currency.text = self.default_currency.to_s || options[:currency].to_s
         authorization_code = request.add_element "authorizationCode"
         authorization_code.text = authorization.to_s
-        reqtype = request.add_element "reqtype"
-        reqtype.text = "DOA"
-        url = URI.parse(test? ? TEST_URL : LIVE_URL)
-        headers = {"Content-Type" => "text/xml"}
-        h = Net::HTTP.new(url.host, url.port)
-        h.use_ssl = false
+        reqtype = request.add_element "reqtype" if void
+        reqtype.text = "DOA" if void
         xml.write(doc, 0)
-        resp = h.post(url.path, doc, headers)
-        response = parse(resp.body)
-        commit(response)
+        doc
       end
-
-      private
 
       def parse(data)
         response = {}
