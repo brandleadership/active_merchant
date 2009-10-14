@@ -63,6 +63,21 @@ module ActiveMerchant #:nodoc:
       #                              :options => { :refno => '23232301' }
       #                             )
       #
+      # === Void
+      #
+      # ==== Parameters
+      # * <tt>:authorization</tt> - The authorization code received from the authorization.
+      # * <tt>:options</tt>
+      #   * <tt>:refno</tt> - The Reference Number of the transaction.
+      #   * <tt>:amount</tt> - The amount of the transaction
+      #   * <tt>:currency</tt> - Optional the Currency of the transaction, default CHF.
+      #
+      # ==== Example
+      #   response = @gateway.void(:authorization,
+      #                            :options => {:refno => '23232301',
+      #                                         :amount => '1000'
+      #                                        }
+      #                           )
       #
       def initialize(options = {})
         requires!(options, :login, :password, :merchant_id)
