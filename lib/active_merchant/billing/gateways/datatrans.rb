@@ -97,7 +97,8 @@ module ActiveMerchant #:nodoc:
       def capture(money, authorization, options = {})
         options[:amount] = money.to_s
         create_xml(authorization, options, doc = "", false)
-        response = post_xml(doc)
+        post_response = post_xml(doc)
+        response = parse(post_response)
         commit(response)
       end
 
@@ -111,7 +112,8 @@ module ActiveMerchant #:nodoc:
       #   * <tt>:currency</tt> - Optional the Currency of the transaction, default CHF.
       def void(authorization, options = {})
         create_xml(authorization, options, doc = "", true)
-        response = post_xml(doc)
+        post_response = post_xml(doc)
+        response = parse(post_response)
         commit(response)
       end
 
@@ -123,8 +125,7 @@ module ActiveMerchant #:nodoc:
         h = Net::HTTP.new(url.host, url.port)
         h.use_ssl = false
         resp = h.post(url.path, doc, headers)
-        response = parse(resp.body)
-        response
+        resp.body
       end
 
       def create_xml(authorization, options, doc, void)
@@ -142,7 +143,6 @@ module ActiveMerchant #:nodoc:
         reqtype = request.add_element "reqtype" if void
         reqtype.text = "DOA" if void
         xml.write(doc, 0)
-        puts doc
         doc
       end
 
