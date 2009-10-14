@@ -37,7 +37,7 @@ namespace :test do
   end
 
   Rake::TestTask.new(:datatrans) do |t|
-    t.pattern = 'test/**/**/*datatrans_test.rb'
+    t.pattern = 'test/unit/**/*datatrans_test.rb'
     t.ruby_opts << '-rubygems'
     t.libs << 'test'
     t.verbose = true
