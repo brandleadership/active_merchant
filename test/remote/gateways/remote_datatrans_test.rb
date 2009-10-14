@@ -1,22 +1,24 @@
 require 'test_helper'
 
 class RemoteDatatransTest < Test::Unit::TestCase
-  
+
+  # Insert here your access data from DataTrans for the RemoteTest
+  # You need to create two orders, so that one can be captured and the other void
   def setup
     @gateway = DatatransGateway.new(
-                 :login => '11907',
-                 :password => '11907',
-                 :merchant_id => '1000011907'
+                 :login => '', # Insert here your Datatrans login
+                 :password => '', # and here your Datatrans password
+                 :merchant_id => '' # here insert your Datatrans Merchant ID
                )
     
     @amount = 1000
     
     @options = {
-      :refno => '123987',
+      :refno => '', # insert here the Reference Number of the order
       :amount => 1000
     }
     @options_capture = {
-      :refno => '123987'
+      :refno => '' # insert here the Reference Number of the order
     }
   end
   
